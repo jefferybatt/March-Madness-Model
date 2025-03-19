@@ -1,5 +1,5 @@
 # March-Madness-Model
-A statistical analysis project with the goal of creating a (near) perfect bracket. I'm utilizing my own intuitive knowledge of basketball, xAI Grok 3 beta, Microsoft Excel 365, Python and Power BI. I plan to iterate on a our composite "Grok Score" each year to improve the performance of the predictive model for the NCAA Men's Basketball Tournament. The foundational Key Performance Indicators (KPIs) I'm focusing on to start are; Possession Differential (PD), Effective Field Goal Percentage (EFG%), Strength of Schedule (SOS) and Average Age Weighted by Minutes (AAWM). 
+A statistical analysis project with the goal of creating a (near) perfect bracket. I'm utilizing my own intuitive knowledge and experience in basketball, xAI Grok 3 beta, Microsoft Excel 365, Python and Power BI. I plan to iterate on a our composite "Grok Score" each year to improve the performance of the predictive model for the NCAA Men's Basketball Tournament. The foundational Key Performance Indicators (KPIs) I'm focusing on to start are; Possession Differential (PD), Effective Field Goal Percentage (EFG%), Strength of Schedule (SOS) and Average Age Weighted by Minutes (AAWM). 
 
 ## Possession Differential (PD)
 How many more possessions do you get than your opponent on average? Every possession matters in single elimination tournament basketball. Scores on average are lower in this competition format, two teams facing elimination become more risk averse, games are described as "cagey". To get an approximation of the possession battle (fouls & refs constant), we're simply using a team's season average Rebound Differential (RD) and their season average Turnover Differential (TD). RD + TD = PD. 
@@ -12,4 +12,9 @@ SOS is included in RPI, which is the primary metric for determind Rank. We want 
 
 ## Average Age Weighted by Minutes (AAWM)
 AAWM is a proxy for experience and maturity essentially. The NIL era has ushered in an older generation of college players, which has increased the disparity between ages on the court, in some cases you have 18 year olds playing against 23 or 24 years olds who still have eligibility. This is a crucial factor, especially in terms of motivation (someone playing maybe the last game of their career vs someone just trying not to get hurt before the NBA draft). There is a counter intutive argument however that the older players in NCAA aren't as good, otherwise they would be playing pro already. In any case, we believe it is still a factor, albeit not as significant as PD, EFG or SOS. 
+
+## Data Gathering and Cleaning
+We weren't able to find a single source that had all the data were interested in so we utilized Grok 3 beta and Python (PyCharm) in order to scrape basketball stats from various websites in order to aggregate and merge our data into a single table. Our sources were; ncaa.com for EFG%, RD, TD  and basketball.realgm.com for SOS and AAWM. basketball.realgm.com proved difficult to compile the age data, because of the tricky website navigation, and needing to scrape birthdates and minutes played from seperate tables on the same page for all 365 teams.
+
+## Data Merging and Fuzzy Matching. 
 
