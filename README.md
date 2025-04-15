@@ -20,13 +20,13 @@ We weren't able to find a single source that had all the data were interested in
 There may be no greater fuzzy matching challenge out there than merging NCAA Men's basketball teams stats from various sources. Trying to find the right balance to account for the differencece in terminology; Connecticut vs Uconn for example proved difficult. Another exmaple being that "St." at the beginning of a string means, "Saint", where as "St." at the end of a string means, "State", except for in the case of "Mt. St. Mary's"... We imported packages, 'pandas' and 'fuzzywuzzy' into Pycharm's in order to join on the "Team" column as our Primary Key. There were 9 more teams in the realGM database than in the NCAA website, so that was our target # of teams missing data. In the end we came very close but had to essentially manually match about 20 teams, as there was just no rhyme or reason to the difference between "Texas A&M - CC" and "East Texas A&M". 
 
 ## Model 1
+I developed a custom "GROK" Score metric, refined a 364-team dataset with 10 manual mappings to match 355 NCAA teams, and validated it with regression analysis in Excel, achieving an R Square of 0.5722
 
 (0.05*(PD/AveragePD)) + (0.5*(EFG/AverageEFG)) + (0.5*(SOS/AverageSOS)) + (0.4*(AAWM/AverageAAWM))
 
 The first model we are using is an additive model. Adding our variables together in order to get a composite score. In simple terms we are aiming to take a teams extra posessions they get vs their opponent and add their shooting efficiency, while also taking into account their strength of schedule and their age or experience level for tournament pressures. We've included a multiplier for each variable in order to balance the equation. We also normalized each metric by dividing it by the average to give us a relative metric. The average was based of the national average, all 355 teams. 
 
 ## Model 2
-
 = (((EFG - 0.5158) * 7 + 1) * (((PD - (-13.8)) / (11 - (-13.8))) * 3) * ((SOS - 0.508) * 7 + 1) * (AAWM / 20.5))
 
 The second model we are testing is a multiplicative formula, meaning each term amplifies the others. This design reflects the philosophy that basketball success—especially in high-stakes settings like March Madness—requires strength across multiple dimensions: shooting efficiency, possession control, schedule toughness, and experience. Let’s dive into each term. 
@@ -62,3 +62,39 @@ Normalizes schedule strength around the average (0.508), scaled by 7.
 
 AAWM Term: AAWM / 20.5
 Scales experience relative to a reference age (20.5).
+
+Model 2 was also developed more with the assistance of Grok and to achieve a better R-squared value which it did, =.7287
+
+## Model 3
+I filled out a third bracket by just using everything I had learned during my research about the teams, and applying my human intution. This could be considered a control variable to see how well Grok does vs me the human, just extracting as much intuition from my work with Grok. Didn't stick to any sort of equation. 
+
+## Results
+Model 1 (Grok 1) 
+Total Games - 38/63 (60.3%)
+Sweet 16 - 7/16
+Elite 8 - 4/8
+Final 4 - 2/4
+Final 2 - 1/2
+Champ - 0/1
+
+Model 2 (Grok 2) - 42/63 
+Total Games - 42/63 (66.6%)
+Sweet 16 - 12/16
+Elite 8 - 4/8
+Final 4 - 2/4
+Final 2 - 0/2
+Champ - 0/1
+*Near Perfect East Bracket (14/15). Only missed the East Final (1 Duke v 2 Alabama).
+
+Model 3 (Grok + Jeff) - 
+Total Games - 38/63 (60.3%)
+Sweet 16 - 8/16
+Elite 8 - 4/8
+Final 4 - 2/4
+Final 2 - 1/2
+Champ - 1/1 
+* Correctly predicted Florida as National Champion.
+
+In Summary, Model 2 was the best predictive model overall with a 66% accuracy, a solid start. It also predicted the East Region with almost perfect accuracy 14/15, only incorrectly predicting the East Region final 1 Duke v 2 Alabama. This could be in part however that there was only 1 upset in the entire region, 6 BYU over 3 Wisconsin, which we predicted. Model 3 (the human bracket), tied Model 1 (60.3%), however I accurately predicted the National Champion (Florida). This could indicate that when it comes to the final few games of the tournament, leaning away from the predicitve model and weighting human intution higher in these games may be sensible, as this is when the pressure is the highest and intangibles are most important. 
+
+
