@@ -69,29 +69,29 @@ Model 2 was also developed more with the assistance of Grok and to achieve a bet
 I filled out a third bracket by just using everything I had learned during my research about the teams, and applying my human intution. This could be considered a control variable to see how well Grok does vs me the human, just extracting as much intuition from my work with Grok. Didn't stick to any sort of equation. 
 
 ## Results
-Model 1 (Grok 1) 
-Total Games - 38/63 (60.3%)
-Sweet 16 - 7/16
-Elite 8 - 4/8
-Final 4 - 2/4
-Final 2 - 1/2
+Model 1 (Grok 1),
+Total Games - 38/63 (60.3%),
+Sweet 16 - 7/16,
+Elite 8 - 4/8,
+Final 4 - 2/4,
+Final 2 - 1/2,
 Champ - 0/1
 
-Model 2 (Grok 2) - 42/63 
-Total Games - 42/63 (66.6%)
-Sweet 16 - 12/16
-Elite 8 - 4/8
-Final 4 - 2/4
-Final 2 - 0/2
-Champ - 0/1
-*Near Perfect East Bracket (14/15). Only missed the East Final (1 Duke v 2 Alabama).
+Model 2 (Grok 2) - 42/63 ,
+Total Games - 42/63 (66.6%),
+Sweet 16 - 12/16,
+Elite 8 - 4/8,
+Final 4 - 2/4,
+Final 2 - 0/2,
+Champ - 0/1,
+* Near Perfect East Bracket (14/15). Only missed the East Final (1 Duke v 2 Alabama).
 
-Model 3 (Grok + Jeff) - 
-Total Games - 38/63 (60.3%)
-Sweet 16 - 8/16
-Elite 8 - 4/8
-Final 4 - 2/4
-Final 2 - 1/2
+Model 3 (Grok + Jeff),
+Total Games - 38/63 (60.3%),
+Sweet 16 - 8/16,
+Elite 8 - 4/8,
+Final 4 - 2/4,
+Final 2 - 1/2,
 Champ - 1/1 
 * Correctly predicted Florida as National Champion.
 
