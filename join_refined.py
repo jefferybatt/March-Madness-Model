@@ -1,0 +1,189 @@
+import pandas as pd
+import os
+from fuzzywuzzy import process, fuzz
+
+# Directory
+csv_directory = r"C:\Users\JTBat\PycharmProjects\MBBALL25"
+
+# CSV files
+csv_files = [
+    "realgm_rpi_sos.csv",  # Base file with 364 teams
+    "realgm_aawm.csv",
+    "ncaa_data_EFG.csv",
+    "ncaa_data_RD.csv",
+    "ncaa_data_TD.csv"
+]
+
+# Normalization function with updated rules
+def normalize_team_name(name):
+    original = name.strip().replace("  ", " ")
+    # Rule 2: "St." at start → "Saint"
+    if name.startswith("St."):
+        name = name.replace("St.", "Saint", 1)
+    # Rule 1: "St." in middle or end → "State" (exclude differentiators), fix Mount St. Mary's
+    if "St." in name[2:] and not any(d in name for d in ["(NY)", "(PA)", "(CA)"]) and "Mount" not in name:
+        name = name.replace("St.", "State")
+    elif "Mount St. Mary's" in name:
+        name = "Mount Saint Mary's"
+    # Specific replacements based on known issues
+    replacements = {
+        "UNCW": "UNC Wilmington",
+        "UNCG": "UNC Greensboro",
+        "VMI": "Virginia Military",
+        "Ark.-Pine Bluff": "Arkansas-Pine Bluff",
+        "Central Mich.": "Central Michigan",
+        "Mississippi Val.": "Mississippi Valley State",
+        "McNeese": "McNeese State",
+        "Brigham Young": "BYU",
+        "Middle Tenn.": "Middle Tennessee State",
+        "Southern Methodist": "SMU",
+        "Loyola (IL)": "Loyola Chicago",
+        "Loyola Marymount": "LMU",
+        "Florida Gulf Coast": "FGCU",
+        "Incarnate Word": "UIW",
+        "Long Island": "LIU",
+        "Florida International": "FIU",
+        "Loyola (MD)": "Loyola Maryland",
+        "N.J.I.T.": "NJIT",
+        "Fairleigh Dickinson": "FDU",
+        "Cal State Bakersfield": "CSU Bakersfield",
+        "SIU-Edwardsville": "SIUE"
+    }
+    # State abbreviations (only at end of name)
+    state_abbr = {
+        "Mich.": "Michigan",
+        "Ill.": "Illinois",
+        "Ky.": "Kentucky",
+        "Wash.": "Washington",
+        "Caro.": "Carolina"
+    }
+    for abbr, full in replacements.items():
+        if name == abbr:
+            name = full
+    # Apply state abbreviations only at the end
+    for abbr, full in state_abbr.items():
+        if name.endswith(abbr):
+            name = name.replace(abbr, full)
+    if "State State" in name:
+        name = name.replace("State State", "State")
+    if name != original:
+        print(f"Normalized: '{original}' -> '{name}'")
+    return name
+
+# Load DataFrames
+dfs = {}
+for filename in csv_files:
+    filepath = os.path.join(csv_directory, filename)
+    df = pd.read_csv(filepath)
+    df['Team'] = df['Team'].apply(normalize_team_name)
+    dfs[filename] = df
+    print(f"Loaded {filename} with {len(df)} rows: {list(df.columns)}")
+
+# Check for duplicates in base file
+base_df = dfs["realgm_rpi_sos.csv"]
+duplicates = base_df[base_df.duplicated(subset=['Team'], keep=False)]
+if not duplicates.empty:
+    print("\nDuplicates in realgm_rpi_sos.csv:")
+    print(duplicates)
+    # Drop duplicates, keep first occurrence
+    base_df = base_df.drop_duplicates(subset=['Team'], keep='first')
+duplicates_after = base_df[base_df.duplicated(subset=['Team'], keep=False)]
+if not duplicates_after.empty:
+    print("\nDuplicates remaining after drop:")
+    print(duplicates_after)
+base_teams = base_df['Team'].dropna().unique().tolist()
+print(f"Base teams: {len(base_teams)}")
+
+# Merge
+merged_data = []
+unmatched_teams = []
+problem_teams = ["Florida", "Florida Gulf Coast", "Florida International", "Saint Mary's", "McNeese State", "Brigham Young", "Middle Tennessee State", "Southern Methodist", "Northern Iowa", "Loyola (IL)", "Miami (FL)", "Miami (OH)", "UNC Wilmington", "Virginia Military", "Mississippi Valley State", "Incarnate Word", "Long Island", "Loyola (MD)", "Fairleigh Dickinson", "Cal State Bakersfield", "SIU-Edwardsville"]
+for team in base_teams:
+    team_row = {"Team": team}
+    base_row = base_df[base_df['Team'] == team].iloc[0]
+    team_row['Rank'] = base_row['Rank']
+    team_row['RPI'] = base_row['RPI']
+    team_row['SOS'] = base_row['SOS']
+
+    for filename, df in dfs.items():
+        if filename == "realgm_rpi_sos.csv":
+            continue
+        # Exact match for problem teams, relaxed threshold to 85%
+        if team in problem_teams:
+            matched_team = team if team in df['Team'].values else None
+            if not matched_team:
+                matches = process.extractOne(team, df['Team'].dropna(), scorer=fuzz.token_sort_ratio)
+                matched_team = matches[0] if matches and matches[1] >= 85 else None
+            if matched_team:
+                print(f"Matched {team} in {filename} to {matched_team} (Score: {matches[1] if not matched_team == team else 100})")
+        else:
+            matches = process.extractOne(team, df['Team'].dropna(), scorer=fuzz.token_sort_ratio)
+            matched_team = matches[0] if matches and matches[1] >= 95 else None
+            if not matched_team:
+                matches = process.extractOne(team, df['Team'].dropna(), scorer=fuzz.partial_ratio)
+                matched_team = matches[0] if matches and matches[1] >= 85 else None
+
+        # Apply match if valid
+        if matched_team in df['Team'].values:
+            row = df[df['Team'] == matched_team].iloc[0]
+            for col in df.columns:
+                if col != 'Team':
+                    team_row[col] = row[col]
+        elif team in problem_teams:
+            closest = process.extract(team, df['Team'].dropna(), scorer=fuzz.token_sort_ratio, limit=2)
+            unmatched_teams.append((filename, team, closest[0][0], closest[0][1], closest[1][0], closest[1][1]))
+        else:
+            unmatched_teams.append((filename, team, "No Match", 0, "No Match", 0))
+
+    merged_data.append(team_row)
+
+# Final DataFrame
+final_df = pd.DataFrame(merged_data)
+cols = ['Team', 'Rank', 'RPI', 'SOS', 'AAWM', 'EFG%', 'RD', 'TD']
+final_df = final_df[cols]
+
+# Save
+output_path = os.path.join(csv_directory, "merged_ncaa_data_refined_v31.csv")
+final_df.to_csv(output_path, index=False)
+
+# Output
+print("\nUnmatched or Low-Confidence Teams:")
+for file, team, match1, score1, match2, score2 in unmatched_teams:
+    print(f"{file}: {team} -> {match1} (Score: {score1}), {match2} (Score: {score2})")
+
+print("\nProblem Teams Data:")
+for team in problem_teams:
+    rows = final_df[final_df['Team'] == team]
+    if not rows.empty:
+        print(f"\n{team}:")
+        print(rows)
+
+print("\nMerged DataFrame (first 5 rows):")
+print(final_df.head())
+print(f"\nSaved to '{output_path}' with {len(final_df)} teams")
+
+# Missing data check
+missing = final_df[final_df[['Rank', 'RPI', 'SOS', 'AAWM', 'EFG%', 'RD', 'TD']].isna().any(axis=1)]
+print(f"\nTeams with Missing Data ({len(missing)}):")
+print(missing)
+
+# Check for the 9 expected unmatched teams
+realgm_teams = set(base_df['Team'])
+efg_teams = set(dfs["ncaa_data_EFG.csv"]['Team'])
+rd_teams = set(dfs["ncaa_data_RD.csv"]['Team'])
+td_teams = set(dfs["ncaa_data_TD.csv"]['Team'])
+ncaa_teams = efg_teams.union(rd_teams, td_teams)
+print(f"\nDebugging Unmatched Teams Calculation:")
+print(f"RealGM teams count: {len(realgm_teams)}")
+print(f"EFG teams count: {len(efg_teams)}")
+print(f"RD teams count: {len(rd_teams)}")
+print(f"TD teams count: {len(td_teams)}")
+print(f"Combined NCAA teams count: {len(ncaa_teams)}")
+unmatched_realgm = realgm_teams - ncaa_teams
+print(f"\nRealGM teams not in NCAA data ({len(unmatched_realgm)} expected 9):")
+print(unmatched_realgm)
+
+# Cross-check with missing data
+missing_teams = set(final_df[final_df[['EFG%', 'RD', 'TD']].isna().any(axis=1)]['Team'])
+print(f"\nCross-check: Teams with missing NCAA stats (EFG%, RD, TD) ({len(missing_teams)}):")
+print(missing_teams)
